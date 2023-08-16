@@ -6,8 +6,14 @@ const ExpressError = require('./utils/expressError');
 const path = require("path");
 const methodOverride = require('method-override');
 const flash = require('connect-flash');
+
+const users = require("./routes/users");
 const campgrounds = require('./routes/campgrounds');
 const reviews = require('./routes/reviews');
+
+const passport = require("passport");
+const localStrategy = require("passport-local");
+const User = require("./models/users");
 
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp',{
@@ -44,10 +50,18 @@ const sessionConfig = {
     }
 }
 app.use(session(sessionConfig))
-
 app.use(flash());
 
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new localStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
 app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     next();
@@ -57,6 +71,7 @@ app.get("/", (req, res)=>{
     res.render("home");
 })
 
+app.use("/", users);
 app.use("/campgrounds", campgrounds);
 app.use('/campgrounds/:id/reviews', reviews );
 
