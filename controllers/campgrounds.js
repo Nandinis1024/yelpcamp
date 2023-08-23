@@ -2,6 +2,9 @@ const Campground = require("../models/campgrounds");
 const { campgroundSchema } = require('../schemas.js');
 const ExpressError = require('../utils/expressError');
 const { cloudinary } = require("../cloudinary")
+const mbxGeocoding = require("@mapbox/mapbox-sdk/services/geocoding");
+const mapBoxToken = process.env.MAP_BOX;
+const geocoder = mbxGeocoding({ accessToken: mapBoxToken });
 
 module.exports.index = async (req, res)=>{
     const campgrounds= await Campground.find({});
@@ -13,12 +16,16 @@ module.exports.renderNewForm = async (req, res)=>{
 
     
 module.exports.createNew = async(req, res, next)=>{
-    if(!req.body.campground) throw new ExpressError("invalid campground data", 400);
+    const geoData = await geocoder.forwardGeocode({
+        query: req.body.campground.location,
+        limit: 1
+    }).send()
     let newCampground = new Campground(req.body.campground);
+    newCampground.geometry = geoData.body.features[0].geometry;
     newCampground.image = req.files.map(f => ({ url: f.path, filename: f.filename }));
     newCampground.author = req.user._id;
     await newCampground.save();
-    //console.log(newCampground.image);
+    //console.log(newCampground);
     req.flash('success', 'Successfully made a new campground!');
     res.redirect(`/campgrounds/${newCampground._id}`)} 
 
@@ -70,4 +77,5 @@ module.exports.delete = async(req, res)=>{
     const id = req.params.id;
     await Campground.findByIdAndDelete(id)
     req.flash('success', 'Successfully deleted campground')
-    res.redirect("/campgrounds")}    
+    res.redirect("/campgrounds");
+}    

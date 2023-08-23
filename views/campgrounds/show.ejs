@@ -4,14 +4,23 @@
     <div class="col-6">
         <div id="campgroundCarousel" class="carousel slide">
             <div class="carousel-inner">
-                <% campground[0].image.forEach((img, i) => {  %>
-                <div class="carousel-item <%= i == 0 ? 'active' : ''%>">
-                    <img src="<%= img.url%>" class="d-block w-100" alt="">
-                </div>
-                <% }) %>
-
+                <% if (campground[0].image.length === 0) { %>
+                    <!-- If no images, display a default image -->
+                    <div class="carousel-item active">
+                        <img src="https://res.cloudinary.com/douqbebwk/image/upload/v1600103881/YelpCamp/lz8jjv2gyynjil7lswf4.png" class="d-block w-100" alt="Default Image">
+                    </div>
+                <% } else { %>
+                    <!-- Loop through images and display them in carousel -->
+                    <% campground[0].image.forEach((img, i) => { %>
+                        <div class="carousel-item <%= i === 0 ? 'active' : '' %>">
+                            <img src="<%= img.url %>" class="d-block w-100" alt="Campground Image <%= i %>">
+                        </div>
+                    <% }) %>
+                <% } %>
+                
+                
             </div>
-
+            <% if(campground[0].image.length > 1) {%>
             <button class="carousel-control-prev" type="button" data-bs-target="#campgroundCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
@@ -20,10 +29,9 @@
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
             </button>
-        
+            <% } %>
         </div>
         <div class="card mb-3">
-            <!-- <img src="<%= campground[0].image[0].url%>" class="card-img-top" alt="..."> -->
             <div class="card-body">
                 <h5 class="card-title"><%= campground[0].title%></h5>
                 <p class="card-text"><%= campground[0].description%></p>
@@ -46,8 +54,10 @@
             </div>
         </div>
     </div>
-    <% if(currentUser){ %>
     <div class="col-6">
+        <div id='map' style='width: 100%; height: 300px;'></div>
+    <% if(currentUser){ %>
+    
         <h2>Leave a Review:</h2>
         <form action="/campgrounds/<%= campground[0]._id%>/reviews" method="POST" class="mb-3 needs-validation" novalidate>
             <fieldset class="starability-basic">
@@ -89,3 +99,12 @@
     </div>
     <%} %>
 </div>
+
+<script>
+    const mapToken = '<%-process.env.MAP_BOX%>';
+    const campground = <%- JSON.stringify(campground[0]) %>
+</script>
+
+
+
+<script src="/javascripts/showPageMap.js"></script>
