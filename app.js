@@ -1,4 +1,4 @@
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV != "production") {
     require('dotenv').config();
 }
 
@@ -25,9 +25,11 @@ const localStrategy = require("passport-local");
 const User = require("./models/users");
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
+const MongoDBStore = require("connect-mongo")(session);
+const dbUrl = 'mongodb://127.0.0.1:27017/yelp-camp';
 
-
-mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp',{
+// mongodb://127.0.0.1:27017/yelp-camp
+mongoose.connect(dbUrl,{
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
@@ -52,9 +54,23 @@ app.use(mongoSanitize({
     replaceWith: '_'
 }))
 
+const secret = process.env.SECRET||'thisshouldbeabettersecret!';
+
+const store = new MongoDBStore({
+    url: dbUrl,
+    secret: secret,
+    touchAfter: 24 * 60 * 60
+});
+
+store.on("error", function (e) {
+    console.log("SESSION STORE ERROR", e)
+})
+
 
 const sessionConfig = {
-    secret: "thisshouldbeabettersecret!",
+    store: store,
+    name: 'session',
+    secret: secret,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -104,7 +120,7 @@ app.use(
                 "'self'",
                 "blob:",
                 "data:",
-                "https://res.cloudinary.com/de3lbizbc/", //SHOULD MATCH YOUR CLOUDINARY ACCOUNT! 
+                "https://res.cloudinary.com/"+process.env.CLOUDINARY_CLOUD_NAME+"/", //SHOULD MATCH YOUR CLOUDINARY ACCOUNT! 
                 "https://images.unsplash.com/",
             ],
             fontSrc: ["'self'", ...fontSrcUrls],
